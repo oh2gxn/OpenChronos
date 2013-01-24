@@ -474,50 +474,46 @@ void display_char(u8 segment, u8 chr, u8 mode)
 // @fn          display_chars
 // @brief       Write to consecutive 7-segment characters.
 // @param       u8 segments	LCD segment array 
-//				u8 * str		Pointer to a string
-//				u8 mode		SEG_ON, SEG_OFF, SEG_BLINK
+//		u8 * str	Pointer to a string
+//		u8 mode		SEG_ON, SEG_OFF, SEG_BLINK
 // @return      none
 // *************************************************************************************************
-void display_chars(u8 segments, u8 * str, u8 mode)
-{
+void display_chars(u8 segments, u8 * str, u8 mode) {
 	u8 i;
-	u8 length = 0;			// Write length
-	u8 char_start;			// Starting point for consecutive write
+	u8 length = 0;     // Write length
+	u8 char_start = 0; // Starting point for consecutive write ???
 	
-	//single charakter
-	if ((segments >= LCD_SEG_L1_3) && (segments <= LCD_SEG_L2_DP))
-	{
-		length=1;
-		char_start=segments;
+	// single character
+	if ((segments >= LCD_SEG_L1_3) && (segments <= LCD_SEG_L2_DP)) {
+	  length = 1;
+	  char_start = segments;
 	}
-	//multiple charakters
-	switch (segments)
-	{
-		// LINE1
-		case LCD_SEG_L1_3_0:	length=4; char_start=LCD_SEG_L1_3; break;
-		case LCD_SEG_L1_2_0:	length=3; char_start=LCD_SEG_L1_2; break;
-		case LCD_SEG_L1_1_0: 	length=2; char_start=LCD_SEG_L1_1; break;
-		case LCD_SEG_L1_3_1: 	length=3; char_start=LCD_SEG_L1_3; break;
-		case LCD_SEG_L1_3_2: 	length=2; char_start=LCD_SEG_L1_3; break;
-
-		// LINE2
-		case LCD_SEG_L2_5_0:	length=6; char_start=LCD_SEG_L2_5; break;
-		case LCD_SEG_L2_4_0:	length=5; char_start=LCD_SEG_L2_4; break;
-		case LCD_SEG_L2_3_0:	length=4; char_start=LCD_SEG_L2_3; break;
-		case LCD_SEG_L2_2_0:	length=3; char_start=LCD_SEG_L2_2; break;
-		case LCD_SEG_L2_1_0: 	length=2; char_start=LCD_SEG_L2_1; break;
-		case LCD_SEG_L2_5_4:	length=2; char_start=LCD_SEG_L2_5; break;
-		case LCD_SEG_L2_5_2:	length=4; char_start=LCD_SEG_L2_5; break;
-		case LCD_SEG_L2_3_2:	length=2; char_start=LCD_SEG_L2_3; break;
-		case LCD_SEG_L2_4_2: 	length=3; char_start=LCD_SEG_L2_4; break;
-		case LCD_SEG_L2_4_3: 	length=2; char_start=LCD_SEG_L2_4; break;
-	}
+	// multiple characters
+	switch (segments) {
+	  // LINE1
+	case LCD_SEG_L1_3_0: length=4; char_start=LCD_SEG_L1_3; break;
+	case LCD_SEG_L1_2_0: length=3; char_start=LCD_SEG_L1_2; break;
+	case LCD_SEG_L1_1_0: length=2; char_start=LCD_SEG_L1_1; break;
+	case LCD_SEG_L1_3_1: length=3; char_start=LCD_SEG_L1_3; break;
+	case LCD_SEG_L1_3_2: length=2; char_start=LCD_SEG_L1_3; break;
+	
+	// LINE2
+	case LCD_SEG_L2_5_0: length=6; char_start=LCD_SEG_L2_5; break;
+	case LCD_SEG_L2_4_0: length=5; char_start=LCD_SEG_L2_4; break;
+	case LCD_SEG_L2_3_0: length=4; char_start=LCD_SEG_L2_3; break;
+	case LCD_SEG_L2_2_0: length=3; char_start=LCD_SEG_L2_2; break;
+	case LCD_SEG_L2_1_0: length=2; char_start=LCD_SEG_L2_1; break;
+	case LCD_SEG_L2_5_4: length=2; char_start=LCD_SEG_L2_5; break;
+	case LCD_SEG_L2_5_2: length=4; char_start=LCD_SEG_L2_5; break;
+	case LCD_SEG_L2_3_2: length=2; char_start=LCD_SEG_L2_3; break;
+	case LCD_SEG_L2_4_2: length=3; char_start=LCD_SEG_L2_4; break;
+	case LCD_SEG_L2_4_3: length=2; char_start=LCD_SEG_L2_4; break;
+	} // default?
 	
 	// Write to consecutive digits
-	for(i=0; i<length; i++)
-	{
-		// Use single character routine to write display memory
-		display_char(char_start+i, *(str+i), mode);
+	for(i=0; i<length; i++) {
+	  // Use single character routine to write display memory
+	  display_char(char_start+i, *(str+i), mode);
 	}
 }
 

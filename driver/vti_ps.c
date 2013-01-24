@@ -93,36 +93,36 @@ u8 ps_ok;
 // @param       none
 // @return      none
 // *************************************************************************************************
-void ps_init(void)
-{
-	volatile u8 success, status, eeprom, timeout;
-	
-	PS_INT_DIR &= ~PS_INT_PIN;            	// DRDY is input
-	PS_INT_IES &= ~PS_INT_PIN;				// Interrupt on DRDY rising edge
-	PS_TWI_OUT |= PS_SCL_PIN + PS_SDA_PIN; 	// SCL and SDA are outputs by default
-	PS_TWI_DIR |= PS_SCL_PIN + PS_SDA_PIN; 	// SCL and SDA are outputs by default
-	
-	// Reset global ps_ok flag
-	ps_ok = 0;
-
-	// 100msec delay to allow VDD stabilisation
-	Timer0_A4_Delay(CONV_MS_TO_TICKS(100));
-
-	// Reset pressure sensor -> powerdown sensor
-	success = ps_write_register(0x06, 0x01);   
-
-	// 100msec delay 
-	Timer0_A4_Delay(CONV_MS_TO_TICKS(100));
-
-	// Check if STATUS register BIT0 is cleared
-	status = ps_read_register(0x07, PS_TWI_8BIT_ACCESS);
-	if (((status & BIT0) == 0) && (status != 0)) 
-	{
-		// Check EEPROM checksum in DATARD8 register 
-		eeprom = ps_read_register(0x7F, PS_TWI_8BIT_ACCESS);
-		if (eeprom == 0x01) ps_ok = 1;
-		else 				ps_ok = 0;
-	}
+void ps_init(void) {
+  volatile u8 success, status, eeprom; //, timeout;
+  
+  PS_INT_DIR &= ~PS_INT_PIN;    // DRDY is input
+  PS_INT_IES &= ~PS_INT_PIN;    // Interrupt on DRDY rising edge
+  PS_TWI_OUT |= PS_SCL_PIN + PS_SDA_PIN; // SCL and SDA are outputs by default
+  PS_TWI_DIR |= PS_SCL_PIN + PS_SDA_PIN; // SCL and SDA are outputs by default
+  
+  // Reset global ps_ok flag
+  ps_ok = 0;
+  
+  // 100msec delay to allow VDD stabilisation
+  Timer0_A4_Delay(CONV_MS_TO_TICKS(100));
+  
+  // Reset pressure sensor -> powerdown sensor
+  success = ps_write_register(0x06, 0x01);   
+  
+  // 100msec delay 
+  Timer0_A4_Delay(CONV_MS_TO_TICKS(100));
+  
+  // Check if STATUS register BIT0 is cleared
+  status = ps_read_register(0x07, PS_TWI_8BIT_ACCESS);
+  if (((status & BIT0) == 0) && (status != 0)) {
+    // Check EEPROM checksum in DATARD8 register 
+    eeprom = ps_read_register(0x7F, PS_TWI_8BIT_ACCESS);
+    if (eeprom == 0x01) 
+      ps_ok = 1;
+    else 
+      ps_ok = 0;
+  }
 }
 
 

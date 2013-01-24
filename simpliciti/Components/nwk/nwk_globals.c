@@ -66,11 +66,11 @@ static uint8_t        sRAMAddressIsSet = 0;
  * in the form w.x.y.z. The subfields are each limited to values 0x0-0xFF.
  */
 static const smplVersionInfo_t sVersionInfo = {
-                                                0x02,  /* protocol version */
-                                                0x01,  /* major revision number */
-                                                0x01,  /* minor revision number */
-                                                0x01,  /* maintenance release number */
-                                                0x00   /* special release */
+  0x02,  /* protocol version */
+  0x01,  /* major revision number */
+  0x01,  /* minor revision number */
+  0x01,  /* maintenance release number */
+  0x00   /* special release */
                                                };
 
 /******************************************************************************

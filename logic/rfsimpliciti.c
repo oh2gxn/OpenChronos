@@ -398,179 +398,174 @@ u8 is_rf(void)
 // @param       none
 // @return      none
 // *************************************************************************************************
-void simpliciti_get_ed_data_callback(void)
-{
-	static u8 packet_counter = 0;
-    u8 i;
-    u16 res;
-WDTCTL = WDTPW + WDTHOLD;
+void simpliciti_get_ed_data_callback(void) {
+  static u8 packet_counter = 0;
+#ifdef CONFIG_PHASE_CLOCK
+  u8 i;
+  u16 res;
+#endif
+  WDTCTL = WDTPW + WDTHOLD;
 #ifdef CONFIG_ACCEL
-	if (sRFsmpl.mode == SIMPLICITI_ACCELERATION)
-	{
-		// Wait for next sample
-		Timer0_A4_Delay(CONV_MS_TO_TICKS(5));	
-
-		// Read from sensor if DRDY pin indicates new data (set in PORT2 ISR)
-		if (request.flag.acceleration_measurement && ((AS_INT_IN & AS_INT_PIN) == AS_INT_PIN))
-		{
-			// Clear flag
-			request.flag.acceleration_measurement = 0;
-			
-			// Get data from sensor
-			as_get_data(sAccel.xyz);
-			
-			// Transmit only every 3rd data set (= 33 packets / second) 
-			if (packet_counter++ > 1)
-			{
-				// Reset counter
-				packet_counter = 0;
+  if (sRFsmpl.mode == SIMPLICITI_ACCELERATION) {
+    // Wait for next sample
+    Timer0_A4_Delay(CONV_MS_TO_TICKS(5));	
+    
+    // Read from sensor if DRDY pin indicates new data (set in PORT2 ISR)
+    if (request.flag.acceleration_measurement && 
+	((AS_INT_IN & AS_INT_PIN) == AS_INT_PIN)) {
+      // Clear flag
+      request.flag.acceleration_measurement = 0;
+      
+      // Get data from sensor
+      as_get_data(sAccel.xyz);
+      
+      // Transmit only every 3rd data set (= 33 packets / second) 
+      if (packet_counter++ > 1) {
+	// Reset counter
+	packet_counter = 0;
 	
-				// Store XYZ data in SimpliciTI variable
-				simpliciti_data[1] = sAccel.xyz[0];
-				simpliciti_data[2] = sAccel.xyz[1];
-				simpliciti_data[3] = sAccel.xyz[2];
-			
-				// Trigger packet sending
-				simpliciti_flag |= SIMPLICITI_TRIGGER_SEND_DATA;
-			}
-		}
-	}
+	// Store XYZ data in SimpliciTI variable
+	simpliciti_data[1] = sAccel.xyz[0];
+	simpliciti_data[2] = sAccel.xyz[1];
+	simpliciti_data[3] = sAccel.xyz[2];
+	
+	// Trigger packet sending
+	simpliciti_flag |= SIMPLICITI_TRIGGER_SEND_DATA;
+      }
+    }
+  }
 #endif
 #ifdef CONFIG_PHASE_CLOCK
-	if (sRFsmpl.mode == SIMPLICITI_PHASE_CLOCK_START)
-	{
-		/* Initialisation phase. Get a Session id and send the
-		   program wanted */
-		//display_chars(LCD_SEG_L1_3_2, itoa(packet_counter, 2, ' '), SEG_ON);
-		
-		if(packet_counter == 30) {
-			simpliciti_flag |= SIMPLICITI_TRIGGER_STOP;
-			packet_counter = 0;
-			return;
-		}
-		display_symbol(LCD_ICON_BEEPER1, SEG_ON_BLINK_ON);
-		display_symbol(LCD_ICON_BEEPER2, SEG_ON_BLINK_ON);
-
-		// send hw address so he recognices us and we will get a session id
-		simpliciti_data[0] = SIMPLICITI_PHASE_CLOCK_START_EVENTS;
-		// put 2 bytes of watch id into the package
-		WATCH_ID(simpliciti_data, 1);
-		// FIXME: TODO set program  
-		simpliciti_data[3] = sPhase.program;
-		simpliciti_flag |= SIMPLICITI_TRIGGER_SEND_DATA | SIMPLICITI_TRIGGER_RECEIVE_DATA;
-		packet_counter ++;
-		
-	}
-	else if (sRFsmpl.mode == SIMPLICITI_PHASE_CLOCK)
-	{
-		//display_symbol(LCD_ICON_BEEPER1, SEG_ON_BLINK_ON);
-		// Wait for next sample
-		display_symbol(LCD_ICON_RECORD, SEG_ON);
-		Timer0_A4_Delay(CONV_MS_TO_TICKS(60));	
-		// Read from sensor if DRDY pin indicates new data (set in PORT2 ISR)
-		if (request.flag.acceleration_measurement && ((AS_INT_IN & AS_INT_PIN) == AS_INT_PIN))
-		{
-			// Clear flag
-			request.flag.acceleration_measurement = 0;
-			
-			// Get data from sensor
-			as_get_data(sAccel.xyz);
-			
-			// push messured data onto the stack
-			if (sPhase.data_nr > SLEEP_DATA_BUFFER-1) {
-				phase_clock_calcpoint();
-				display_symbol(LCD_ICON_BEEPER1, SEG_OFF);
-				display_symbol(LCD_ICON_BEEPER2, SEG_OFF);
-				display_symbol(LCD_ICON_BEEPER3, SEG_OFF);
-
-			} else {
-				// copy current value onto the stack
-				//memcpy(&sPhase.data[sPhase.data_nr][0], &sAccel.xyz, sizeof(u8)*3);
-				sPhase.data[sPhase.data_nr][0] = sAccel.xyz[0];
-				sPhase.data[sPhase.data_nr][1] = sAccel.xyz[1];
-				sPhase.data[sPhase.data_nr][2] = sAccel.xyz[2];
-				//simpliciti_data[3] = sAccel.xyz[2];
-				sPhase.data_nr++;
-			}
-//str = itoa(accel_data, 3, 0);
-
-			if ((sPhase.out_nr > SLEEP_OUT_BUFFER-1))
-			{
-				// Reset counter
-				sPhase.out_nr = 0;
-				res = 0;
-
-				for(i=0; i < SLEEP_OUT_BUFFER; i++) {
-					//if (((2**17)-1))
-					// FIXME: overflow detection ?
-					res += sPhase.out[i];
-				}
-				packet_counter = (packet_counter+1)%SLEEP_MAX_PACKET_COUNTER;
-				simpliciti_data[3] =  (sPhase.session << (8-SLEEP_RF_ID_BIT_LENGHT)) | packet_counter;
-				simpliciti_data[2] =  res  & 0xFF;
-				simpliciti_data[1] =  (res >> 8) & 0xFF;
-				simpliciti_data[0] = SIMPLICITI_PHASE_CLOCK_EVENTS;
-
-				simpliciti_payload_length = 4;
-
-				display_symbol(LCD_ICON_BEEPER1, SEG_ON_BLINK_ON);
-				display_symbol(LCD_ICON_BEEPER2, SEG_ON_BLINK_ON);
-				display_symbol(LCD_ICON_BEEPER3, SEG_ON_BLINK_ON);
-
-                open_radio();
-                
-				simpliciti_flag |= SIMPLICITI_TRIGGER_SEND_DATA;
-			} else if (sPhase.out_nr == 0) {
-                // shutoff radio. no need to let it run for so long
-                close_radio();
-            }
-
-
-            sRFsmpl.timeout = SIMPLICITI_TIMEOUT; 
-
-		}
+  if (sRFsmpl.mode == SIMPLICITI_PHASE_CLOCK_START) {
+    /* Initialisation phase. Get a Session id and send the
+       program wanted */
+    //display_chars(LCD_SEG_L1_3_2, itoa(packet_counter, 2, ' '), SEG_ON);
+	  
+    if(packet_counter == 30) {
+      simpliciti_flag |= SIMPLICITI_TRIGGER_STOP;
+      packet_counter = 0;
+      return;
     }
-#endif
-	if (sRFsmpl.mode == SIMPLICITI_BUTTONS) // transmit only button events
-	{
-		// New button event is stored in data
-		if ((packet_counter == 0) && (simpliciti_data[0] & 0xF0) != 0)
-		{
-			packet_counter = 5;
-		}
-		
-		// Send packet several times 
-		if (packet_counter > 0)
-		{
-			// Clear button event when sending last packet
-			if (--packet_counter == 0)
-			{
-				simpliciti_data[0] &= ~0xF0;
-			}
-			else
-			{
-				// Trigger packet sending in regular intervals
-				Timer0_A4_Delay(CONV_MS_TO_TICKS(30));
-				simpliciti_flag |= SIMPLICITI_TRIGGER_SEND_DATA;
-			}
-		}
-		else
-		{
-			// Wait in LPM3 for next button press
-			_BIS_SR(LPM3_bits + GIE); 	
-			__no_operation();
-		}
-	}
+    display_symbol(LCD_ICON_BEEPER1, SEG_ON_BLINK_ON);
+    display_symbol(LCD_ICON_BEEPER2, SEG_ON_BLINK_ON);
+    
+    // send hw address so he recognices us and we will get a session id
+    simpliciti_data[0] = SIMPLICITI_PHASE_CLOCK_START_EVENTS;
+    // put 2 bytes of watch id into the package
+    WATCH_ID(simpliciti_data, 1);
+    // FIXME: TODO set program  
+    simpliciti_data[3] = sPhase.program;
+    simpliciti_flag |= SIMPLICITI_TRIGGER_SEND_DATA | 
+	               SIMPLICITI_TRIGGER_RECEIVE_DATA;
+    packet_counter ++;
+    
+  }
+  else if (sRFsmpl.mode == SIMPLICITI_PHASE_CLOCK) {
+    //display_symbol(LCD_ICON_BEEPER1, SEG_ON_BLINK_ON);
+    // Wait for next sample
+    display_symbol(LCD_ICON_RECORD, SEG_ON);
+    Timer0_A4_Delay(CONV_MS_TO_TICKS(60));	
+    // Read from sensor if DRDY pin indicates new data (set in PORT2 ISR)
+    if (request.flag.acceleration_measurement && 
+	((AS_INT_IN & AS_INT_PIN) == AS_INT_PIN)) {
+      // Clear flag
+      request.flag.acceleration_measurement = 0;
+      
+      // Get data from sensor
+      as_get_data(sAccel.xyz);
+      
+      // push messured data onto the stack
+      if (sPhase.data_nr > SLEEP_DATA_BUFFER-1) {
+	phase_clock_calcpoint();
+	display_symbol(LCD_ICON_BEEPER1, SEG_OFF);
+	display_symbol(LCD_ICON_BEEPER2, SEG_OFF);
+	display_symbol(LCD_ICON_BEEPER3, SEG_OFF);
 	
-	// Update clock every 1/1 second
-	if (display.flag.update_time)
-	{
-		display_time(LINE1, DISPLAY_LINE_UPDATE_PARTIAL);
-		display.flag.update_time = 0;
-
-		// Service watchdog
-		WDTCTL = WDTPW + WDTIS__512K + WDTSSEL__ACLK + WDTCNTCL;
+      } 
+      else {
+	// copy current value onto the stack
+	//memcpy(&sPhase.data[sPhase.data_nr][0], &sAccel.xyz, sizeof(u8)*3);
+	sPhase.data[sPhase.data_nr][0] = sAccel.xyz[0];
+	sPhase.data[sPhase.data_nr][1] = sAccel.xyz[1];
+	sPhase.data[sPhase.data_nr][2] = sAccel.xyz[2];
+	//simpliciti_data[3] = sAccel.xyz[2];
+	sPhase.data_nr++;
+      }
+      //str = itoa(accel_data, 3, 0);
+      
+      if ((sPhase.out_nr > SLEEP_OUT_BUFFER-1)){
+	// Reset counter
+	sPhase.out_nr = 0;
+	res = 0;
+	
+	for(i=0; i < SLEEP_OUT_BUFFER; i++) {
+	  //if (((2**17)-1))
+	  // FIXME: overflow detection ?
+	  res += sPhase.out[i];
 	}
+	packet_counter = (packet_counter+1)%SLEEP_MAX_PACKET_COUNTER;
+	simpliciti_data[3] =  (sPhase.session << 
+			       (8-SLEEP_RF_ID_BIT_LENGHT)) | 
+		              packet_counter;
+	simpliciti_data[2] =  res  & 0xFF;
+	simpliciti_data[1] =  (res >> 8) & 0xFF;
+	simpliciti_data[0] = SIMPLICITI_PHASE_CLOCK_EVENTS;
+	
+	simpliciti_payload_length = 4;
+	
+	display_symbol(LCD_ICON_BEEPER1, SEG_ON_BLINK_ON);
+	display_symbol(LCD_ICON_BEEPER2, SEG_ON_BLINK_ON);
+	display_symbol(LCD_ICON_BEEPER3, SEG_ON_BLINK_ON);
+	
+	open_radio();
+        
+	simpliciti_flag |= SIMPLICITI_TRIGGER_SEND_DATA;
+      } 
+      else if (sPhase.out_nr == 0) {
+	// shutoff radio. no need to let it run for so long
+	close_radio();
+      }
+      
+      
+      sRFsmpl.timeout = SIMPLICITI_TIMEOUT; 
+      
+    }
+  }
+#endif
+  if (sRFsmpl.mode == SIMPLICITI_BUTTONS) { 
+    // transmit only button events
+    // New button event is stored in data
+    if ((packet_counter == 0) && (simpliciti_data[0] & 0xF0) != 0) {
+      packet_counter = 5;
+    }
+    
+    // Send packet several times 
+    if (packet_counter > 0) {
+      // Clear button event when sending last packet
+      if (--packet_counter == 0) {
+        simpliciti_data[0] &= ~0xF0;
+      }
+      else {
+	// Trigger packet sending in regular intervals
+	Timer0_A4_Delay(CONV_MS_TO_TICKS(30));
+	simpliciti_flag |= SIMPLICITI_TRIGGER_SEND_DATA;
+      }
+    }
+    else {
+      // Wait in LPM3 for next button press
+      _BIS_SR(LPM3_bits + GIE); 	
+      __no_operation();
+    }
+  }
+  
+  // Update clock every 1/1 second
+  if (display.flag.update_time) {
+    display_time(LINE1, DISPLAY_LINE_UPDATE_PARTIAL);
+    display.flag.update_time = 0;
+    
+    // Service watchdog
+    WDTCTL = WDTPW + WDTIS__512K + WDTSSEL__ACLK + WDTCNTCL;
+  }
 }
 
 // *************************************************************************************************

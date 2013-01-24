@@ -180,87 +180,90 @@ void add_day(void)
 // @param       line		LINE1, LINE2
 // @return      none
 // *************************************************************************************************
-void mx_date(line_t line)
-{
+void mx_date(line_t line) {
 #ifdef CONFIG_USE_SYNC_TOSET_TIME
-	return;
+  return;
 #else
-	u8 select;
-	s32 day;
-	s32 month;
-	s32 year;
-	s16 max_days;
-	u8 * str;
-			
-	// Clear display
-	clear_display_all();
-			
-	// Convert global to local variables
-	day 	= sDate.day;
-	month 	= sDate.month;
-	year 	= sDate.year;
-		
-	// Init value index
-	select = 0;	
-	
-	// Init display
-	// LINE1: YYYY (will be drawn by set_value)
-	// LINE2: MM  DD
-	
-	str = itoa(day, 2, 1);
-	display_chars(LCD_SEG_L2_1_0, str, SEG_ON);
+  u8 select;
+  s32 day;
+  s32 month;
+  s32 year;
+  s16 max_days = 31; // max number of days/month ?
+  u8 * str;
+  
+  // Clear display
+  clear_display_all();
+  
+  // Convert global to local variables
+  day 	= sDate.day;
+  month = sDate.month;
+  year 	= sDate.year;
+  
+  // Init value index
+  select = 0;	
+  
+  // Init display
+  // LINE1: YYYY (will be drawn by set_value)
+  // LINE2: MM  DD
+  
+  str = itoa(day, 2, 1);
+  display_chars(LCD_SEG_L2_1_0, str, SEG_ON);
+  
+  str = itoa(month, 2, 1);
+  display_chars(LCD_SEG_L2_5_4, str, SEG_ON);
+  
+  // Loop values until all are set or user breaks set
+  while (1) {
+    // Idle timeout: exit without saving 
+    if (sys.flag.idle_timeout) 
+      break;
+    
+    // Button STAR (short): save, then exit 
+    if (button.flag.star) {
+      // Copy local variables to global variables
+      sDate.day = day;
+      sDate.month = month;
+      sDate.year = year;
+#ifdef CONFIG_SIDEREAL
+      if(sSidereal_time.sync>0)
+	sync_sidereal();
+#endif
+#if (CONFIG_DST > 0)
+      dst_calculate_dates();
+#endif
+      
+      // Full display update is done when returning from function
+      break;
+    }
 
-	str = itoa(month, 2, 1);
-	display_chars(LCD_SEG_L2_5_4, str, SEG_ON);
-
-	// Loop values until all are set or user breaks	set
-	while(1) 
-	{
-		// Idle timeout: exit without saving 
-		if (sys.flag.idle_timeout) break;
-
-		// Button STAR (short): save, then exit 
-		if (button.flag.star) 
-		{
-			// Copy local variables to global variables
-			sDate.day = day;
-			sDate.month = month;
-			sDate.year = year;
-			#ifdef CONFIG_SIDEREAL
-			if(sSidereal_time.sync>0)
-				sync_sidereal();
-			#endif
-            #if (CONFIG_DST > 0)
-            dst_calculate_dates();
-            #endif
-			
-			// Full display update is done when returning from function
-			break;
-		}
-
-		switch (select)
-		{
-			case 0:		// Set year
-						set_value(&year, 4, 0, 2008, 2100, SETVALUE_DISPLAY_VALUE + SETVALUE_NEXT_VALUE, LCD_SEG_L1_3_0, display_value1);
-						select = 1;
-						break;
-			case 1:		// Set month
-						set_value(&month, 2, 1, 1, 12, SETVALUE_ROLLOVER_VALUE + SETVALUE_DISPLAY_VALUE + SETVALUE_NEXT_VALUE, LCD_SEG_L2_5_4, display_value1);
-						select = 2;
-						break;
-			case 2:		// Set day
-						set_value(&day, 2, 1, 1, max_days, SETVALUE_ROLLOVER_VALUE + SETVALUE_DISPLAY_VALUE + SETVALUE_NEXT_VALUE, LCD_SEG_L2_1_0, display_value1);
-						select = 0;
-						break;
-		}
-		
-		// Check if day is still valid, if not clamp to last day of current month
-		max_days = get_numberOfDays(month, year);
-		if (day > max_days) day = max_days;
-	}
-	
-	// Clear button flag
-	button.all_flags = 0;
+    switch (select) {
+    case 0:		// Set year
+      set_value(&year, 4, 0, 2008, 2100, 
+		SETVALUE_DISPLAY_VALUE + SETVALUE_NEXT_VALUE, 
+		LCD_SEG_L1_3_0, display_value1);
+      select = 1;
+      break;
+    case 1:		// Set month
+      set_value(&month, 2, 1, 1, 12, 
+		SETVALUE_ROLLOVER_VALUE + SETVALUE_DISPLAY_VALUE + 
+		SETVALUE_NEXT_VALUE, LCD_SEG_L2_5_4, display_value1);
+      select = 2;
+      break;
+    case 2:		// Set day
+      set_value(&day, 2, 1, 1, max_days, 
+		SETVALUE_ROLLOVER_VALUE + SETVALUE_DISPLAY_VALUE + 
+		SETVALUE_NEXT_VALUE, LCD_SEG_L2_1_0, display_value1);
+      select = 0;
+      break;
+    }
+    
+    // Check if day is still valid, if not clamp to last day of current month
+    max_days = get_numberOfDays(month, year);
+    if (day > max_days) day = max_days;
+  }
+  
+  // Clear button flag
+  button.all_flags = 0;
 #endif
 }
 

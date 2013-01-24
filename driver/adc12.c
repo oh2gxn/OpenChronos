@@ -160,31 +160,31 @@ u16 adc12_single_conversion(u16 ref, u16 sht, u16 channel)
 
 
 
-// *************************************************************************************************
+// ****************************************************************************
 // @fn          ADC12ISR
 // @brief       Store ADC12 conversion result. Set flag to indicate data ready.
 // @param       none
 // @return      none
-// *************************************************************************************************
+// ****************************************************************************
 //pfs wrapped the following to accommodate mspgcc compiler
 #ifdef __GNUC__
-#include <signal.h>
-interrupt (ADC12_VECTOR) ADC12ISR (void)
+#include <legacymsp430.h>
+/* #include <signal.h> // deprecated */
+interrupt(ADC12_VECTOR) ADC12ISR (void)
 #else
 #pragma vector=ADC12_VECTOR
 __interrupt void ADC12ISR (void)
 #endif
 {
-  switch(__even_in_range(ADC12IV,34))
-  {
+  switch(__even_in_range(ADC12IV,34)) {
   case  0: break;                           // Vector  0:  No interrupt
   case  2: break;                           // Vector  2:  ADC overflow
   case  4: break;                           // Vector  4:  ADC timing overflow
   case  6:                                  // Vector  6:  ADC12IFG0
-    		adc12_result = ADC12MEM0;                       // Move results, IFG is cleared
-    		adc12_data_ready = 1;
-    		_BIC_SR_IRQ(LPM3_bits);   						// Exit active CPU
-    		break;
+    adc12_result = ADC12MEM0;               // Move results, IFG is cleared
+    adc12_data_ready = 1;
+    _BIC_SR_IRQ(LPM3_bits);   		    // Exit active CPU
+    break;
   case  8: break;                           // Vector  8:  ADC12IFG1
   case 10: break;                           // Vector 10:  ADC12IFG2
   case 12: break;                           // Vector 12:  ADC12IFG3

@@ -44,6 +44,10 @@
 #include "bsp.h"
 #include "bsp_config.h"
 
+#ifndef BSP_MSP430_DEFS_H
+#error "bsp_msp430_defs.h not included at bsp_board.c"
+#endif
+
 /* ------------------------------------------------------------------------------------------------
  *                                            Prototypes
  * ------------------------------------------------------------------------------------------------
@@ -177,8 +181,14 @@ static void Bsp_SetClocks(void)
    * changed is n x 32 x 32 x f_MCLK / f_FLL_reference.
    * 32 x 32 x 12 MHz / 32,768 Hz = 375000 = MCLK cycles for DCO to settle
    */
-  __delay_cycles(375000);
-	
+  //__delay_cycles(375000); // FIXME: argument too large, max = 65535?
+  __delay_cycles(62500);
+  __delay_cycles(62500);
+  __delay_cycles(62500);
+  __delay_cycles(62500);
+  __delay_cycles(62500);
+  __delay_cycles(62500);
+  
   /* Loop until XT1,XT2 & DCO fault flag is cleared */
   do
   {
@@ -191,20 +201,21 @@ static void Bsp_SetClocks(void)
   UCSCTL4 = SELA__REFOCLK | SELS__DCOCLKDIV | SELM__DCOCLKDIV;
 }
 
-/**************************************************************************************************
+/*****************************************************************************
  * @fn          BSP_EARLY_INIT
  *
- * @brief       This function is called by start-up code before doing the normal initialization
- *              of data segments. If the return value is zero, initialization is not performed.
- *              The global macro label "BSP_EARLY_INIT" gets #defined in the bsp_msp430_defs.h
- *              file, according to the specific compiler environment (CCE or IAR). In the CCE
- *              environment this macro invokes "_system_pre_init()" and in the IAR environment
- *              this macro invokes "__low_level_init()".
+ * @brief This function is called by start-up code before doing the normal
+ *        initialization of data segments. If the return value is zero,
+ *        initialization is not performed.  The global macro label
+ *        "BSP_EARLY_INIT" gets #defined in the bsp_msp430_defs.h file,
+ *        according to the specific compiler environment (CCE or IAR). In the
+ *        CCE environment this macro invokes "_system_pre_init()" and in the IAR
+ *        environment this macro invokes "__low_level_init()".
  *
  * @param       None
  *
  * @return      0 - don't intialize data segments / 1 - do initialization
- *************************************************************************************************
+ ******************************************************************************
  */
 BSP_EARLY_INIT(void)
 {
@@ -260,8 +271,7 @@ void BSP_InitBoard(void)
  * @return      none
  **************************************************************************************************
  */
-void BSP_Delay(uint16_t usec)
-{
+void BSP_Delay(uint16_t usec) {
   BSP_ASSERT(usec < BSP_DELAY_MAX_USEC);
 
   //TA0R = 0; /* initial count  */

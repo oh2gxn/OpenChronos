@@ -42,14 +42,14 @@ void __delay_cycles(unsigned long __cycles)
 //__set_interrupt_state  used in bsp_msp430_defs.h, rf1a.c
 void     __set_interrupt_state(istate_t state)
 {
-	 __asm__("bis %0,r2" : : "ir" ((uint16_t) state));
+	 __asm__("bis %0,r2" : : "ir" ((unsigned short) state));
 }
 
 	
 //__get_interrupt_state  used in bsp_msp430_defs.h, rf1a.c
 istate_t __get_interrupt_state(void)
 {
-	return(READ_SR&0x0008);
- }
+	return(READ_SR & 0x0008);
+}
  
  

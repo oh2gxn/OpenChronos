@@ -62,16 +62,17 @@
 #define __bsp_CLOCK_MHZ__         BSP_CONFIG_CLOCK_MHZ
 
 
-/* ------------------------------------------------------------------------------------------------
- *                                     Board Initialization
- * ------------------------------------------------------------------------------------------------
+/* --------------------------------------------------------------------------
+ * Board Initialization
+ * --------------------------------------------------------------------------
  */
+#include <stdint.h>
 #define BSP_BOARD_C               "bsp_board.c"
 #define BSP_INIT_BOARD()          BSP_InitBoard()
 #define BSP_DELAY_USECS(x)        BSP_Delay(x)
 
 void BSP_InitBoard(void);
-void BSP_Delay(uint16_t usec);
+void BSP_Delay(uint16_t usec); /* FIXME: uint16_t not included? */
 
 /* ************************************************************************************************
  *                                   Compile Time Integrity Checks

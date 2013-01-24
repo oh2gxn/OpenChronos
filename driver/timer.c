@@ -317,7 +317,8 @@ void Timer0_A4_Delay(u16 ticks)
 // *************************************************************************************************
 //pfs 
 #ifdef __GNUC__  
-#include <signal.h>
+#include <legacymsp430.h>
+/* #include <signal.h> // deprecated */
 interrupt (TIMER0_A0_VECTOR) TIMER0_A0_ISR(void)
 #else
 #pragma vector = TIMER0_A0_VECTOR

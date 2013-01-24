@@ -147,74 +147,73 @@ void as_init(void)
 // @param       none
 // @return      none
 // *************************************************************************************************
-void as_start(void)
-{
-	volatile u16 Counter_u16;
-	u8 bConfig;//, bStatus;
-	
-	// Initialize SPI interface to acceleration sensor
-	AS_SPI_CTL0 |= UCSYNC | UCMST | UCMSB // SPI master, 8 data bits,  MSB first,
-	               | UCCKPH;              //  clock idle low, data output on falling edge
-	AS_SPI_CTL1 |= UCSSEL1;               // SMCLK as clock source
-	AS_SPI_BR0   = AS_BR_DIVIDER;         // Low byte of division factor for baud rate
-	AS_SPI_BR1   = 0x00;                  // High byte of division factor for baud rate
-	AS_SPI_CTL1 &= ~UCSWRST;              // Start SPI hardware
+void as_start(void) {
+  //volatile u16 Counter_u16;
+  u8 bConfig;//, bStatus;
   
-	// Initialize interrupt pin for data read out from acceleration sensor
-	AS_INT_IES &= ~AS_INT_PIN;            // Interrupt on rising edge
-
+  // Initialize SPI interface to acceleration sensor
+  AS_SPI_CTL0 |= UCSYNC | UCMST | UCMSB // SPI master, 8 data bits,  MSB first,
+	  | UCCKPH;              //  clock idle low, data output on falling edge
+  AS_SPI_CTL1 |= UCSSEL1;               // SMCLK as clock source
+  AS_SPI_BR0   = AS_BR_DIVIDER;         // Low byte of division factor for baud rate
+  AS_SPI_BR1   = 0x00;                  // High byte of division factor for baud rate
+  AS_SPI_CTL1 &= ~UCSWRST;              // Start SPI hardware
+  
+  // Initialize interrupt pin for data read out from acceleration sensor
+  AS_INT_IES &= ~AS_INT_PIN;            // Interrupt on rising edge
+  
 #ifdef AS_DISCONNECT	  
-	// Enable interrupt 
-	AS_INT_DIR &= ~AS_INT_PIN;            // Switch INT pin to input
-	AS_SPI_DIR &= ~AS_SDI_PIN;            // Switch SDI pin to input
-	AS_SPI_REN |=  AS_SDI_PIN;            // Pulldown on SDI pin
-	AS_SPI_SEL |=  AS_SDO_PIN + AS_SDI_PIN + AS_SCK_PIN; // Port pins to SDO, SDI and SCK function
-	AS_CSN_OUT |=  AS_CSN_PIN;            // Deselect acceleration sensor
-	AS_PWR_OUT |=  AS_PWR_PIN;            // Power on active high
+  // Enable interrupt 
+  AS_INT_DIR &= ~AS_INT_PIN;            // Switch INT pin to input
+  AS_SPI_DIR &= ~AS_SDI_PIN;            // Switch SDI pin to input
+  AS_SPI_REN |=  AS_SDI_PIN;            // Pulldown on SDI pin
+  AS_SPI_SEL |=  AS_SDO_PIN + AS_SDI_PIN + AS_SCK_PIN; // Port pins to SDO, SDI and SCK function
+  AS_CSN_OUT |=  AS_CSN_PIN;            // Deselect acceleration sensor
+  AS_PWR_OUT |=  AS_PWR_PIN;            // Power on active high
 #endif
-
-	// Delay of >5ms required between switching on power and configuring sensor
-	Timer0_A4_Delay(CONV_MS_TO_TICKS(10));
-	
-	// Initialize interrupt pin for data read out from acceleration sensor
-	AS_INT_IFG &= ~AS_INT_PIN;            // Reset flag
-	AS_INT_IE  |=  AS_INT_PIN;            // Enable interrupt
-	
-	// Configure sensor and start to sample data
+  
+  // Delay of >5ms required between switching on power and configuring sensor
+  Timer0_A4_Delay(CONV_MS_TO_TICKS(10));
+  
+  // Initialize interrupt pin for data read out from acceleration sensor
+  AS_INT_IFG &= ~AS_INT_PIN;            // Reset flag
+  AS_INT_IE  |=  AS_INT_PIN;            // Enable interrupt
+  
+  // Configure sensor and start to sample data
 #if (AS_RANGE == 2)
   bConfig = 0x80;
-  #if (AS_SAMPLE_RATE == 100)
-    bConfig |= 0x02;
-  #elif (AS_SAMPLE_RATE == 400)
-    bConfig |= 0x04;
-  #else
-    #error "Sample rate not supported"
-  #endif
+#if (AS_SAMPLE_RATE == 100)
+  bConfig |= 0x02;
+#elif (AS_SAMPLE_RATE == 400)
+  bConfig |= 0x04;
+#else
+#error "Sample rate not supported"
+#endif
 #elif (AS_RANGE == 8)
   bConfig = 0x00;
-  #if (AS_SAMPLE_RATE == 40)
-    bConfig |= 0x06;
-  #elif (AS_SAMPLE_RATE == 100)
-    bConfig |= 0x02;
-  #elif (AS_SAMPLE_RATE == 400)
-    bConfig |= 0x04;
-  #else
-    #error "Sample rate not supported"
-  #endif
+#if (AS_SAMPLE_RATE == 40)
+  bConfig |= 0x06;
+#elif (AS_SAMPLE_RATE == 100)
+  bConfig |= 0x02;
+#elif (AS_SAMPLE_RATE == 400)
+  bConfig |= 0x04;
 #else
-  #error "Measurement range not supported"    
+#error "Sample rate not supported"
+#endif
+#else
+#error "Measurement range not supported"    
 #endif  
 
-	// Reset sensor
-	as_write_register(0x04, 0x02);   
-	as_write_register(0x04, 0x0A);   
-	as_write_register(0x04, 0x04);   
-	
-	// Wait 5 ms before starting sensor output
-	Timer0_A4_Delay(CONV_MS_TO_TICKS(5));
-	
-	// Set 2g measurement range, start to output data with 100Hz rate
-	as_write_register(0x02, bConfig);   
+  // Reset sensor
+  as_write_register(0x04, 0x02);   
+  as_write_register(0x04, 0x0A);   
+  as_write_register(0x04, 0x04);   
+  
+  // Wait 5 ms before starting sensor output
+  Timer0_A4_Delay(CONV_MS_TO_TICKS(5));
+  
+  // Set 2g measurement range, start to output data with 100Hz rate
+  as_write_register(0x02, bConfig);   
 }
 
 

@@ -80,6 +80,8 @@
 #include <intrinsics.h>
 #define BSP_EARLY_INIT(void) __intrinsic int __low_level_init(void)
 
+// end of if __IAR_SYSTEMS_ICC__
+
 /* ---------------------- Code Composer ---------------------- */
 #elif (defined __TI_COMPILER_VERSION__) && (defined __MSP430__)
 #define BSP_COMPILER_CODE_COMPOSER
@@ -101,9 +103,11 @@
 //pfs
 /* ------------------- mspgcc Compiler ------------------------*/
 #elif defined(__GNUC__)
+//#error "This error must happen with gcc!"
 
 #define BSP_COMPILER_GCC
 
+#define BSP_EARLY_INIT(void)        int bsp_ignored_function(void)
 #define __bsp_ISTATE_T__            unsigned short
 #define __bsp_ISR_FUNCTION__(f,v)   interrupt(v) f()
 #if (__CC430F6137__)
@@ -135,15 +139,16 @@
 #if (defined BSP_COMPILER_GCC)
 #include <intrinsics.h>
   //pfs #include <io.h>
-  #include <signal.h>
+#include <legacymsp430.h>
+/*  #include <signal.h> // deprecated */
   
-  #define __bsp_ENABLE_INTERRUPTS__()       eint()
-  #define __bsp_DISABLE_INTERRUPTS__()      dint()
-  #define __bsp_INTERRUPTS_ARE_ENABLED__()  (READ_SR&0x0008)
-  
-  #define __bsp_GET_ISTATE__()              (READ_SR&0x0008)
-  #define __bsp_RESTORE_ISTATE__(x)         __asm__("bis %0,r2" : : "ir" ((uint16_t) x))
-  #define __bsp_QUOTED_PRAGMA__(x)          _Pragma(#x)
+#define __bsp_ENABLE_INTERRUPTS__()       eint()
+#define __bsp_DISABLE_INTERRUPTS__()      dint()
+#define __bsp_INTERRUPTS_ARE_ENABLED__()  (READ_SR&0x0008)
+
+#define __bsp_GET_ISTATE__()              (READ_SR&0x0008)
+#define __bsp_RESTORE_ISTATE__(x)         __asm__("bis %0,r2" : : "ir" ((uint16_t) x))
+#define __bsp_QUOTED_PRAGMA__(x)          _Pragma(#x)
 #endif
 
 
@@ -157,6 +162,7 @@
 
 //pfs  wrapped the following in #ifndef
 #ifndef __GNUC__ //mspgcc defines these
+#error "Not using GNU C?"
 typedef   signed char     int8_t;
 typedef   signed short    int16_t;
 typedef   signed long     int32_t;
@@ -172,4 +178,5 @@ typedef   unsigned long   uint32_t;
 
 /**************************************************************************************************
  */
-#endif
+#endif  //BSP_MSP430_DEFS_H
+
