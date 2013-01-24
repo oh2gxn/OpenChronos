@@ -115,6 +115,13 @@ config:
 	$(PYTHON) tools/config.py
 	git update-index --assume-unchanged config.h 2> /dev/null || true
 
+bsl: main
+	mspdebug -d /dev/ttyACM0 flash-bsl build/eZChronos.txt
+
+
+#setenv MSP_PORT `mspdebug --usb-list | grep 0451:16a6 | cut -c'5 6 7 8 9 10 11'`
+#mspdebug -U $MSP_PORT rf2500 build/eZChronos.txt
+
 help:
 	@echo "Valid targets are"
 	@echo "    main"
